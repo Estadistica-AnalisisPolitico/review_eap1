@@ -67,7 +67,7 @@ Hay muchas opciones para las *técnicas* señaladas en el punto 3. La elección 
 
 ## I. Explorando la Variable de interés
 
-Supongamos que estás interesado en la "situación de los locales escolares en el Perú". Ese simple interés te lleva a buscar datos para saber tal situación. De pronto te encuentras con estos datos (basado en [CEPLAN](https://www.ceplan.gob.pe/informacion-de-brechas-territoriales/)):
+Supongamos que estás interesado en la "situación de los locales escolares en el Perú". Ese simple interés te lleva a buscar datos para saber tal situación. De pronto te encuentras con estos [datos](https://drive.google.com/drive/folders/1Memoge2Blx3XS1iFlt2hFVJtu9UBF_Xo?usp=sharing) (basado en [CEPLAN](https://www.ceplan.gob.pe/informacion-de-brechas-territoriales/)):
 
 <iframe width="800" height="400" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pubhtml?">
 
