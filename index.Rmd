@@ -1,0 +1,389 @@
+---
+title: ""
+output:
+  html_document:
+    df_print: paged
+---
+
+<center><img src="https://github.com/Estadistica-AnalisisPolitico/operations_onDFs/blob/main/Logo2025.png?raw=true" width="900"/></center>
+
+<br>
+
+<br>
+
+Profesor:[Dr. José Manuel MAGALLANES REYES, Ph.D](http://www.pucp.edu.pe/profesor/jose-manuel-magallanes/" target="_blank) <br>
+
+-   Profesor Principal del Departamento de Ciencias Sociales, Sección de Ciencia Política y Gobierno.
+
+-   [Oficina 223](https://goo.gl/maps/xuGeG6o9di1i1y5m6) - Edificio CISEPA / ECONOMIA / CCSS
+-   Telefono: (51) 1 - 6262000 anexo 4302
+-   Correo Electrónico: [jmagallanes\@pucp.edu.pe](mailto:jmagallanes@pucp.edu.pe)
+
+<a id='beginning'></a>
+
+------------------------------------------------------------------------
+
+<center>
+
+<header>
+
+<h2>Repaso de Estadística 1: ruta a la REGRESIÓN</h2>
+
+</header>
+
+</center>
+
+
+
+------------------------------------------------------------------------
+
+```{r klippy, echo=FALSE, include=TRUE}
+klippy::klippy(position = c('top', 'right'))
+```
+
+## El *Pipeline* del Analista Político
+
+Podemos proponer que los *analistas* existen para brindar **explicaciones** y **recomendaciones** sobre algún asunto de interés. Por otro lado, el *decisor* es responsable de eligir un curso de acción sabiendo que el analista le ha dado **información incompleta**. Ya el *gestor* se encarga de implementar las decisiones; esa implementación traerá nueva información y el analista vuelve a su trabajo.
+
+La estadística es una ciencia matemática que guía científicamente el análisis de datos. Así el analista trata de seguir una secuencia en su labor:
+
+1.  Apuesta por entender una variable que explicaría un problema de interés (narcotráfico, elecciones, etc). En esta etapa, hace exploración de los datos de esa variable, es decir, organiza los datos en medidas, tablas y gráficos. Se entiende que la variable de interés tiene una variabilidad tal que despierta en el analista la necesidad de preguntar por qué esa variabilidad.
+
+2.  Se plantea hipótesis respecto a qué se relaciona con la variabilidad de la variable de interés. Las hipótesis se formula no antes de haber revisado la literatura. En esta etapa hace uso de análisis bivariado o multivariado. Esta etapa se enriquece si está actualizado en las teorías que proponen cierta asociación de la variable de interés con otras variables.
+
+3.  Aplica la técnica estadística que corresponda, tal que verifique la hipótesis que se planteó.
+
+4.  Interpreta los resultados obtenidos.
+
+5.  Elabora síntesis de lo actuado; propone explicaciones a lo encontrado; y elabora recomendaciones.
+
+Hay muchas opciones para las *técnicas* señaladas en el punto 3. La elección de las mismas dependerá de la preparación del analista. Esta sesión te guiará para que:
+
+1.  Recuerdes cómo y para qué hacer exploración univariada ([ir](#eda))
+2.  Recuerdes cómo y para qué hacer análisis bivariada ([ir](#corr)).
+3.  Introducir el concepto (y necesidad) de la regresión multivariada ([ir](#rlin)).
+
+<a id='eda'></a>
+
+## I. Explorando la Variable de interés
+
+Supongamos que estás interesado en la "situación de los locales escolares en el Perú". Ese simple interés te lleva a buscar datos para saber tal situación. De pronto te encuentras con estos datos (basado en [CEPLAN](https://www.ceplan.gob.pe/informacion-de-brechas-territoriales/)):
+
+<iframe width="800" height="400" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pubhtml?">
+
+</iframe>
+
+Imaginemos que estos datos son lo 'mejor' que podrás conseguir:
+
+-   Variable: Locales Publicos en buen estado:
+
+    -   Representación: Porcentaje.
+    -   Corte: Transversal - sólo 2018.
+
+-   Unidad de Observación: Local Público
+
+-   Unidad de Análisis: Departamento
+
+Teniendo ello en claro, pasemos a explorar los datos:
+
+1.  Carga de datos:
+
+Si los datos están en GoogleDrive, puedes leerlos desde ahí:
+
+```{r}
+rm(list = ls()) # limpiar el working environment
+
+linkADrive='https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=0&single=true&output=csv'
+
+estadoLocales=read.csv(linkADrive)
+
+head(estadoLocales)
+```
+
+La vista preliminar nos muestra varias columnas, pero la de nuestro interés es la última columna de la derecha. A esta altura, antes de explorar los datos de manera estadística, debemos primero verificar cómo R ha intepretado el **tipo** de datos:
+
+```{r}
+str(estadoLocales)
+```
+
+La columna de interés es de *tipo numérico*, y R también lo tiene intrepretado así.
+
+2.  Tablas, Gráficos, y Estadígrafos
+
+Si los datos están en el tipo adecuado, puede iniciarse la exploración estadística.
+
+Tenemos 25 observaciones a nivel departamental. La manera más rápida de ver los estadígrafos es usando el comando **summary()**:
+
+```{r}
+summary(estadoLocales$buenEstado)
+```
+
+Pero, nos faltaría algunos estadígrafos, que podemos añadir así:
+
+```{r}
+library(DescTools)
+
+allStats=c(summary(estadoLocales$buenEstado),
+  sd=sd(estadoLocales$buenEstado),
+  skew=Skew(estadoLocales$buenEstado),
+  kurt=Kurt(estadoLocales$buenEstado),
+  cv=CoefVar(estadoLocales$buenEstado))
+allStats
+```
+
+A esta altura, los gráficos que necesitamos son el histograma:
+
+```{r}
+library(ggplot2)
+
+base=ggplot(data=estadoLocales,
+            aes(x=buenEstado))
+histogram= base + geom_histogram(aes(y = after_stat(density)),
+                 colour = 1, fill = "white",bins=10) +  
+    stat_function(fun = dnorm,
+                  args = list(mean = allStats['Mean'],
+                              sd = allStats['sd']),col='red')
+    
+histogram
+```
+
+Y el boxplot:
+
+```{r}
+base=ggplot(data=estadoLocales,
+            aes(y=buenEstado))
+boxplot=base + geom_boxplot()
+
+boxplot
+```
+
+A esta altura sólo falta identificar a los atípicos en el boxplot, lo cual podemos recuperar con *ggplot_build*:
+
+```{r}
+
+data_boxLocales=ggplot_build(boxplot)$data[[1]]
+data_boxLocales
+```
+
+Los outliers están en una lista, por lo que debemos escribir:
+
+```{r}
+data_boxLocales$outliers
+```
+
+Nota la utilidad de los "bigotes" del boxplot, cuando hay atípicos:
+
+```{r}
+data_boxLocales[c('ymin','ymax')]
+```
+
+En este caso, sabemos que los valores que exceden 31.4 serán considerados atípicos.
+
+Hasta aquí, podrias sustentar que los valores de la variable buen estado de colegios públicos a nivel regional se distribuyen asimétricamente, con una dispersión baja, y con presencia de valores atípicos altos.
+
+<a id='corr'></a>
+
+## II. Análisis Bivariado
+
+Consideremos que nos interesa explorar la posible relación entre nuestra variable de interés y la PEA ocupada. Traigamos esa variable:
+
+```{r}
+linkPea="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=1924082402&single=true&output=csv"
+peaOcu=read.csv(linkPea)
+head(peaOcu)
+```
+
+Nótese que los valores numéricos han sido interpretados como texto. Las comas lo han causado, pero podemos eliminarlas así:
+
+```{r}
+gsub(pattern = ",",replacement = "",peaOcu$peaOcupada)
+```
+
+Usemos ese código para volver numérica esa columna:
+
+```{r}
+peaOcu$peaOcupada=gsub(pattern = ",",replacement = "",peaOcu$peaOcupada)
+peaOcu$peaOcupada=as.numeric(peaOcu$peaOcupada)
+
+# veamos
+str(peaOcu)
+```
+
+Los datos de la PEA están en una tabla diferente, por lo que debemos juntar (merge) ambas tablas, usando como *key* alguna columna común en ambas:
+
+```{r}
+EstPea=merge(estadoLocales,peaOcu, by = "UBIGEO")
+EstPea
+```
+
+Como son *dos* variables de tipo *numérico* la estrategia a seguir es el análisis de correlación. Veamos este **scatterplot**:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+library(ggrepel)
+base=ggplot(data=EstPea, aes(x=peaOcupada, y=buenEstado))
+scatter = base + geom_point()
+scatterText = scatter + geom_text_repel(aes(label=DEPARTAMENTO),size=2)
+scatterText
+```
+
+Calculemos ahora los indices de correlación:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+f1=formula(~peaOcupada + buenEstado)
+```
+
+Camino parametrico:
+
+```{r}
+
+pearsonf1=cor.test(f1,data=EstPea)[c('estimate','p.value')]
+pearsonf1
+
+```
+
+Camino no parametrico
+
+```{r}
+spearmanf1=cor.test(f1,data=EstPea,method='spearman',exact=F)[c('estimate','p.value')]
+spearmanf1
+```
+
+Hasta aquí, dudamos que esas variables estén correlacionadas.
+
+Otro caso importante es cuando analizamos nuestra variable versus una variable categórica. Por ejemplo, saber si se distribuye igual según una región sea "populosa" o no lo sea. Traigamos los datos de población:
+
+```{r}
+linkPobla="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=1758328391&single=true&output=csv"
+poblas=read.csv(linkPobla)
+head(poblas)
+```
+
+De nuevo debemos hacer *merge*:
+
+```{r}
+EstPeaPob=merge(EstPea, poblas,by="UBIGEO")
+head(EstPeaPob)
+```
+
+Creemos aquí una variable categórica (*factor*) que represente "populoso" como tener más de un millón de habitantes:
+
+```{r}
+library(magrittr)
+EstPeaPob$populoso=ifelse(EstPeaPob$TOTAL>1000000,'Si','No')%>%as.factor()
+
+# veamos conteo de cada categoría
+table(EstPeaPob$populoso)
+```
+
+Pidamos un boxplot, pero por grupos:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+base=ggplot(data=EstPeaPob, aes(x=populoso, y=buenEstado))
+base + geom_boxplot(notch = T) +  geom_jitter(color="black", size=0.4, alpha=0.9)
+
+```
+
+Los boxplots tienen un *notch* flanqueando a la *mediana*, para sugerir igualdad de medianas si éstos se intersectan; de ahi que parece no haber diferencia sustantiva entre las categorías.
+
+Verificar si hay o no igualdad entre distribuciones depende si las variables se distribuyen o no de manera normal por grupo. Como ello no es fácil de discernir visualmente, complementemos el análisis con los tests de normalidad. Usemos *Shapiro-Wilk* en cada grupo:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+
+
+f2=formula(buenEstado~populoso)
+
+
+tablag= aggregate(f2, EstPeaPob,
+          FUN = function(x) {y <- shapiro.test(x); c(y$statistic, y$p.value)})
+
+
+
+
+shapiroTest=as.data.frame(tablag[,2])
+names(shapiroTest)=c("W","Prob")
+shapiroTest
+
+```
+
+Para que se vea mejor en *html*:
+
+```{r}
+library(knitr)
+library(magrittr)
+library(kableExtra)
+kable(cbind(tablag[1],shapiroTest))%>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "left")
+```
+
+Habría normalidad en un grupo y no en otro. Usemos entonces tanto la prueba de *Mann-Whitney* (no paramétrica) como la *prueba t* para analizar las diferencias:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+(student_T=t.test(f2,data=EstPeaPob)[c('estimate','p.value')])
+
+```
+
+```{r}
+(Mann_Whitnery=wilcox.test(f2,data=EstPeaPob,exact=F)['p.value'])
+```
+
+Con toda esta información, iriamos concluyendo también que ser populoso o no no tendría efecto en nuestra variable.
+
+------------------------------------------------------------------------
+
+<a id='rlin'></a>
+
+## III. Regresión Lineal
+
+La regresión es una técnica donde hay que definir una variable dependiente y una o más independientes. Las independientes pueden tener rol predictor, dependiendo del diseño de investigación, aunque por defecto tiene un rol explicativo.
+
+La regresión sí quiere informar cuánto una variable (*independiente*) puede explicar la variación de otra (*dependiente*), de ahí que es una técnica para probar hipótesis direccionales o asimétricas (las correlaciones tiene hipótesis simétricas).
+
+La regresión devuelve un modelo, es decir una ecuación, que recoge cómo una o más variables explicaríab a otra. Para nuestro caso la variable dependiente es el estado de los locales:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+
+modelo1=formula(buenEstado~peaOcupada + populoso)
+```
+
+Por ejemplo, para la hipótesis '*el estado de los locales escolares públicos en una región depende de la PEA ocupada regional y si la región tiene más de un millón de pobladores o no*', la regresión arrojaría este resultado:
+
+<br></br>
+
+```{r, eval=FALSE, echo=FALSE}
+regre1=lm(modelo1,data = EstPeaPob)
+summary(regre1)
+```
+
+Hasta aquí, vemos que lo que nos informaba el análisis bivariado se mantiene en la regresión: ningun predictor tiene efecto, pues la probabilidad de que el efecto sea cero, en cada caso, es muy alta (mayor a 0.1).
+
+Sin embargo, es aquí donde reflexionamos si los datos crudos que tenemos podrían necesitar alguna **transformación**:
+
+```{r}
+# la pea como porcentaje
+EstPeaPob$peaOcu_pct=EstPeaPob$peaOcupada/EstPeaPob$TOTAL
+
+
+modelo2=formula(buenEstado~peaOcu_pct + populoso)
+regre2=lm(modelo2,data = EstPeaPob)
+summary(regre2)
+```
+
+O en mejor version con ayuda de *stargazer*:
+
+```{r, warning=FALSE, message=FALSE, echo=TRUE,results='asis'}
+library(stargazer)
+
+stargazer(regre2,type = "html",intercept.bottom = FALSE)
+```
+
+<br></br>
+
+Aquí aparace algo muy interesante, **primero** que *peaOcu_pct* tiene efecto, pues es *significativo* (*p-valor* es menor que 0.05); **segundo**, que ese efecto es *directo*, pues el coeficiente calculado es positivo (signo de columna *Estimate*); y **tercero** que la *magnitud* de ese efecto es `r round(regre2$coefficients[2],3)`, lo que indica cuánto aumenta, en promedio, la variables dependiente, cuando la variable independiente se incremente en una unidad.
+
+Esto es información suficiente para representar esa relación con una ecuación:
+
+$$  BuenEstado\_pct= `r regre2$coefficients[1]` + `r regre2$coefficients[2]` \cdot PEA\_pct + `r regre2$coefficients[3]` \cdot Populoso + \epsilon$$
+
+El Y verdadero es *BuenEstado_pct*, pero la regresión produce un $\hat{BuenEstado_pct}$ estimado, de ahi la presencia del $\epsilon$. Justamente el *R cuadrado ajustado* (`r summary(regre2)$r.squared`) nos brinda un porcentaje (multiplicalo por 100), que nos da una pista de nuestra cercanía a una situación perfecta (cuando vale **1**).
+
+[al INICIO](#beginning)
