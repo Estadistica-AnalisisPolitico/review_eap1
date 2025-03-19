@@ -334,11 +334,11 @@ Con toda esta información, iriamos concluyendo también que ser populoso o no n
 
 ## III. Regresión Lineal
 
-La regresión es una técnica donde hay que definir una variable dependiente y una o más independientes. Las independientes pueden tener rol predictor, dependiendo del diseño de investigación, aunque por defecto tiene un rol explicativo.
+La regresión es una técnica donde hay que definir una variable dependiente y una o más independientes. Las independientes pueden tener rol predictor, dependiendo del diseño de investigación, aunque por defecto tiene un rol asociativo.
 
-La regresión sí quiere informar cuánto una variable (*independiente*) puede explicar la variación de otra (*dependiente*), de ahí que es una técnica para probar hipótesis direccionales o asimétricas (las correlaciones tiene hipótesis simétricas).
+La regresión sí quiere informar cuánto una variable (*independiente*) está asociada a la variación de otra (*dependiente*), de ahí que es una técnica para probar hipótesis direccionales o asimétricas (las correlaciones tiene hipótesis simétricas).
 
-La regresión devuelve un modelo, es decir una ecuación, que recoge cómo una o más variables explicaríab a otra. Para nuestro caso la variable dependiente es el estado de los locales:
+La regresión devuelve un modelo relacional entre variables, es decir una ecuación, que recoge cómo una o más variables explicarían a otra. Para nuestro caso la variable dependiente es el estado de los locales:
 
 ```{r, warning=FALSE, message=FALSE, echo=TRUE}
 
