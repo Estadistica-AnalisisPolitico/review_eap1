@@ -27,7 +27,7 @@ Profesor:[Dr. José Manuel MAGALLANES REYES, Ph.D](http://www.pucp.edu.pe/profes
 
 <header>
 
-<h2>Repaso de Estadística 1: ruta a la REGRESIÓN</h2>
+<h2>Analisis Bivariado</h2>
 
 </header>
 
@@ -47,11 +47,11 @@ Podemos proponer que los *analistas* existen para brindar **explicaciones** y **
 
 La estadística es una ciencia matemática que guía científicamente el análisis de datos. Así el analista trata de seguir una secuencia en su labor:
 
-1.  Apuesta por entender una variable que explicaría un problema de interés (narcotráfico, elecciones, etc). En esta etapa, hace exploración de los datos de esa variable, es decir, organiza los datos en medidas, tablas y gráficos. Se entiende que la variable de interés tiene una variabilidad tal que despierta en el analista la necesidad de preguntar por qué esa variabilidad.
+1.  Apuesta por entender una variable que explicaría un problema de interés (narcotráfico, elecciones, etc). En esta etapa, hace exploración de los datos de esa variable, es decir, organiza los datos en tablas, y de ahi calcula medidas, tablas resumen y gráficos. Se entiende que la variable de interés tiene una variabilidad tal que despierta en el analista la necesidad de preguntar **por qué esa variabilidad**.
 
 2.  Se plantea hipótesis respecto a qué se relaciona con la variabilidad de la variable de interés. Las hipótesis se formula no antes de haber revisado la literatura. En esta etapa hace uso de análisis bivariado o multivariado. Esta etapa se enriquece si está actualizado en las teorías que proponen cierta asociación de la variable de interés con otras variables.
 
-3.  Aplica la técnica estadística que corresponda, tal que verifique la hipótesis que se planteó.
+3.  Aplica la técnica estadística que corresponda, tal que confirme, o no, la hipótesis que se planteó.
 
 4.  Interpreta los resultados obtenidos.
 
@@ -95,7 +95,7 @@ rm(list = ls()) # limpiar el working environment
 
 linkADrive='https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=0&single=true&output=csv'
 
-estadoLocales=read.csv(linkADrive)
+estadoLocales=read.csv(linkADrive )
 
 head(estadoLocales)
 ```
@@ -120,7 +120,7 @@ summary(estadoLocales$buenEstado)
 
 Pero, nos faltaría algunos estadígrafos, que podemos añadir así:
 
-```{r}
+```{r, message=FALSE}
 library(DescTools)
 
 allStats=c(summary(estadoLocales$buenEstado),
@@ -133,7 +133,7 @@ allStats
 
 A esta altura, los gráficos que necesitamos son el histograma:
 
-```{r}
+```{r, message=FALSE}
 library(ggplot2)
 
 base=ggplot(data=estadoLocales,
@@ -160,26 +160,26 @@ boxplot
 A esta altura sólo falta identificar a los atípicos en el boxplot, lo cual podemos recuperar con *ggplot_build*:
 
 ```{r}
-
-data_boxLocales=ggplot_build(boxplot)$data[[1]]
-data_boxLocales
+outliersLocales=ggplot_build(boxplot)$data[[1]]$outliers[[1]]
+outliersLocales
 ```
 
-Los outliers están en una lista, por lo que debemos escribir:
 
-```{r}
-data_boxLocales$outliers
-```
-
-Nota la utilidad de los "bigotes" del boxplot, cuando hay atípicos:
+Nota que cuandio hay outliers, se puede calcular del grafico los maximos y minimos teóricos:
 
 ```{r}
 data_boxLocales[c('ymin','ymax')]
 ```
 
-En este caso, sabemos que los valores que exceden 31.4 serán considerados atípicos.
+En este caso, sabemos que los valores que exceden 31.4 serán considerados atípicos:
 
-Hasta aquí, podrias sustentar que los valores de la variable buen estado de colegios públicos a nivel regional se distribuyen asimétricamente, con una dispersión baja, y con presencia de valores atípicos altos.
+```{r}
+estadoLocales[estadoLocales$buenEstado>31.4,]
+```
+
+
+Hasta aquí, podrias sustentar que los valores de la variable buen estado de colegios públicos a nivel regional se distribuyen asimétricamente, con una dispersión baja, y con presencia de valores atípicos cuando los locales en buen estado superan el 31.4 por ciento en los departamentos. Osea, que los locales en buen estados se distribuyen por lo general entre 7.7 y 31.4 por ciento, y que la mitad de los departamentos tienen a lo más un 17.3 por ciento de buenos locales. Las regiones destacadas son sólo dos, pero ninguna de ellas supera siquiera el 50 por ciento.
+
 
 <a id='corr'></a>
 
@@ -250,7 +250,7 @@ spearmanf1
 
 Hasta aquí, dudamos que esas variables estén correlacionadas.
 
-Otro caso importante es cuando analizamos nuestra variable versus una variable categórica. Por ejemplo, saber si se distribuye igual según una región sea "populosa" o no lo sea. Traigamos los datos de población:
+Otro caso importante es cuando analizamos nuestra variable versus una variable categórica. Por ejemplo, saber si se distribuye igual según una región sea más rural que urbana. Traigamos los datos de población:
 
 ```{r}
 linkPobla="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=1758328391&single=true&output=csv"
