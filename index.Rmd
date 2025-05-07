@@ -5,7 +5,7 @@ output:
     df_print: paged
 ---
 
-<center><img src="https://github.com/Estadistica-AnalisisPolitico/operations_onDFs/blob/main/Logo2025.png?raw=true" width="900"/></center>
+<center><img src="https://github.com/Estadistica-AnalisisPolitico/maestriaCpRi/blob/main/POL651.png?raw=true" width="900"/></center>
 
 <br>
 
@@ -108,6 +108,24 @@ str(estadoLocales)
 
 La columna de interés es de *tipo numérico*, y R también lo tiene intrepretado así.
 
+
+Nótese que los valores numéricos han sido interpretados como texto. Las comas lo han causado, pero podemos eliminarlas así:
+
+```{r}
+gsub(pattern = ",",replacement = "",estadoLocales$peaOcupada)
+```
+
+Usemos ese código para volver numérica esa columna:
+
+```{r}
+estadoLocales$peaOcupada=gsub(pattern = ",",replacement = "",estadoLocales$peaOcupada)
+estadoLocales$peaOcupada=as.numeric(estadoLocales$peaOcupada)
+
+# veamos
+str(estadoLocales)
+```
+
+
 2.  Tablas, Gráficos, y Estadígrafos
 
 Si los datos están en el tipo adecuado, puede iniciarse la exploración estadística.
@@ -158,17 +176,22 @@ boxplot
 ```
 
 A esta altura sólo falta identificar a los atípicos en el boxplot, lo cual podemos recuperar con *ggplot_build*:
-
 ```{r}
-outliersLocales=ggplot_build(boxplot)$data[[1]]$outliers[[1]]
+valuesFromBox=ggplot_build(boxplot)$data[[1]]
+valuesFromBox
+```
+
+Los outliers son:
+```{r}
+outliersLocales=valuesFromBox$outliers[[1]]
 outliersLocales
 ```
 
 
-Nota que cuandio hay outliers, se puede calcular del grafico los maximos y minimos teóricos:
+Nota que cuando hay outliers, se puede calcular del grafico los maximos y minimos teóricos:
 
 ```{r}
-data_boxLocales[c('ymin','ymax')]
+valuesFromBox[c('ymin','ymax')]
 ```
 
 En este caso, sabemos que los valores que exceden 31.4 serán considerados atípicos:
@@ -185,42 +208,11 @@ Hasta aquí, podrias sustentar que los valores de la variable buen estado de col
 
 ## II. Análisis Bivariado
 
-Consideremos que nos interesa explorar la posible relación entre nuestra variable de interés y la PEA ocupada. Traigamos esa variable:
-
-```{r}
-linkPea="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=1924082402&single=true&output=csv"
-peaOcu=read.csv(linkPea)
-head(peaOcu)
-```
-
-Nótese que los valores numéricos han sido interpretados como texto. Las comas lo han causado, pero podemos eliminarlas así:
-
-```{r}
-gsub(pattern = ",",replacement = "",peaOcu$peaOcupada)
-```
-
-Usemos ese código para volver numérica esa columna:
-
-```{r}
-peaOcu$peaOcupada=gsub(pattern = ",",replacement = "",peaOcu$peaOcupada)
-peaOcu$peaOcupada=as.numeric(peaOcu$peaOcupada)
-
-# veamos
-str(peaOcu)
-```
-
-Los datos de la PEA están en una tabla diferente, por lo que debemos juntar (merge) ambas tablas, usando como *key* alguna columna común en ambas:
-
-```{r}
-EstPea=merge(estadoLocales,peaOcu, by = "UBIGEO")
-EstPea
-```
-
-Como son *dos* variables de tipo *numérico* la estrategia a seguir es el análisis de correlación. Veamos este **scatterplot**:
+Consideremos que nos interesa explorar la posible relación entre nuestra variable de interés y la PEA ocupada. Como son *dos* variables de tipo *numérico* la estrategia a seguir es el análisis de correlación. Veamos este **scatterplot**:
 
 ```{r, warning=FALSE, message=FALSE, echo=TRUE}
 library(ggrepel)
-base=ggplot(data=EstPea, aes(x=peaOcupada, y=buenEstado))
+base=ggplot(data=estadoLocales, aes(x=peaOcupada, y=buenEstado))
 scatter = base + geom_point()
 scatterText = scatter + geom_text_repel(aes(label=DEPARTAMENTO),size=2)
 scatterText
@@ -236,7 +228,7 @@ Camino parametrico:
 
 ```{r}
 
-pearsonf1=cor.test(f1,data=EstPea)[c('estimate','p.value')]
+pearsonf1=cor.test(f1,data=estadoLocales)[c('estimate','p.value')]
 pearsonf1
 
 ```
@@ -244,56 +236,43 @@ pearsonf1
 Camino no parametrico
 
 ```{r}
-spearmanf1=cor.test(f1,data=EstPea,method='spearman',exact=F)[c('estimate','p.value')]
+spearmanf1=cor.test(f1,data=estadoLocales,method='spearman',exact=F)[c('estimate','p.value')]
 spearmanf1
 ```
 
 Hasta aquí, dudamos que esas variables estén correlacionadas.
 
-Otro caso importante es cuando analizamos nuestra variable versus una variable categórica. Por ejemplo, saber si se distribuye igual según una región sea más rural que urbana. Traigamos los datos de población:
+Otro caso importante es cuando analizamos nuestra variable versus una variable categórica. Por ejemplo, creemos una columna que indique (de manera imprecisa) costa,sierra y selva:
 
 ```{r}
-linkPobla="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2ZSNM8BIZtoufVTO4Mw3ZmTWW1rAAtsGzFg0shHTJXX-3GmtLsgU-Nqkw5RzDgrNX31GTC9L7LnEz/pub?gid=1758328391&single=true&output=csv"
-poblas=read.csv(linkPobla)
-head(poblas)
+estadoLocales$zona=c('selva','costa','sierra', 'costa','sierra',
+                      'sierra','costa','sierra','sierra','selva',
+                      'costa','sierra','costa','costa','costa',
+                      'selva','selva','costa','sierra','costa',
+                      'sierra','selva','costa','costa','selva')
+
+# tendriamos
+estadoLocales
 ```
 
-De nuevo debemos hacer *merge*:
-
-```{r}
-EstPeaPob=merge(EstPea, poblas,by="UBIGEO")
-head(EstPeaPob)
-```
-
-Creemos aquí una variable categórica (*factor*) que represente "populoso" como tener más de un millón de habitantes:
-
-```{r}
-library(magrittr)
-EstPeaPob$populoso=ifelse(EstPeaPob$TOTAL>1000000,'Si','No')%>%as.factor()
-
-# veamos conteo de cada categoría
-table(EstPeaPob$populoso)
-```
 
 Pidamos un boxplot, pero por grupos:
 
 ```{r, warning=FALSE, message=FALSE, echo=TRUE}
-base=ggplot(data=EstPeaPob, aes(x=populoso, y=buenEstado))
-base + geom_boxplot(notch = T) +  geom_jitter(color="black", size=0.4, alpha=0.9)
+base=ggplot(data=estadoLocales, aes(x=zona, y=buenEstado))
+base + geom_boxplot() +  geom_jitter(color="black", size=0.4, alpha=0.9)
 
 ```
 
-Los boxplots tienen un *notch* flanqueando a la *mediana*, para sugerir igualdad de medianas si éstos se intersectan; de ahi que parece no haber diferencia sustantiva entre las categorías.
-
-Verificar si hay o no igualdad entre distribuciones depende si las variables se distribuyen o no de manera normal por grupo. Como ello no es fácil de discernir visualmente, complementemos el análisis con los tests de normalidad. Usemos *Shapiro-Wilk* en cada grupo:
+Parece que hubiese diferencia entre las categorías. Para verificar si hay o no igualdad entre distribuciones depende si las variables se distribuyen o no de manera normal por grupo. Como ello no es fácil de discernir visualmente, complementemos el análisis con los tests de normalidad. Usemos *Shapiro-Wilk* en cada grupo:
 
 ```{r, warning=FALSE, message=FALSE, echo=TRUE}
 
 
-f2=formula(buenEstado~populoso)
+f2=formula(buenEstado~zona)
 
 
-tablag= aggregate(f2, EstPeaPob,
+tablag= aggregate(f2, estadoLocales,
           FUN = function(x) {y <- shapiro.test(x); c(y$statistic, y$p.value)})
 
 
@@ -305,28 +284,25 @@ shapiroTest
 
 ```
 
-Para que se vea mejor en *html*:
 
-```{r}
-library(knitr)
-library(magrittr)
-library(kableExtra)
-kable(cbind(tablag[1],shapiroTest))%>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F, position = "left")
-```
-
-Habría normalidad en un grupo y no en otro. Usemos entonces tanto la prueba de *Mann-Whitney* (no paramétrica) como la *prueba t* para analizar las diferencias:
+Habría normalidad en todos los grupo. Usemos entonces tanto la prueba de *Kruskall* (no paramétrica) como la *prueba anova* para analizar las diferencias:
 
 ```{r, warning=FALSE, message=FALSE, echo=TRUE}
-(student_T=t.test(f2,data=EstPeaPob)[c('estimate','p.value')])
+aovZona=aov(f2,data=estadoLocales)
+summary(aovZona)
+TukeyHSD(aovZona)
+
 
 ```
 
 ```{r}
-(Mann_Whitnery=wilcox.test(f2,data=EstPeaPob,exact=F)['p.value'])
+kruskal.test(f2,data=estadoLocales)
+```
+```{r}
+pairwise.wilcox.test(estadoLocales$buenEstado, estadoLocales$zona, p.adjust.method = "bonferroni")
 ```
 
-Con toda esta información, iriamos concluyendo también que ser populoso o no no tendría efecto en nuestra variable.
+Con toda esta información, iriamos concluyendo también que los locales en buen estado de la costa son más numeros que las otras zonas del país, y que la sierra con la selva podrían estar al mismo nivel.
 
 ------------------------------------------------------------------------
 
@@ -342,43 +318,34 @@ La regresión devuelve un modelo relacional entre variables, es decir una ecuaci
 
 ```{r, warning=FALSE, message=FALSE, echo=TRUE}
 
-modelo1=formula(buenEstado~peaOcupada + populoso)
+modelo1=formula(buenEstado~peaOcupada + zona)
 ```
 
-Por ejemplo, para la hipótesis '*el estado de los locales escolares públicos en una región depende de la PEA ocupada regional y si la región tiene más de un millón de pobladores o no*', la regresión arrojaría este resultado:
+Por ejemplo, para la hipótesis '*el estado de los locales escolares públicos en una región depende de la PEA ocupada regional y si la ubicación de la región*', la regresión arrojaría este resultado:
 
 <br></br>
 
 ```{r, eval=FALSE, echo=FALSE}
-regre1=lm(modelo1,data = EstPeaPob)
+regre1=lm(modelo1,data = estadoLocales)
 summary(regre1)
 ```
 
-Hasta aquí, vemos que lo que nos informaba el análisis bivariado se mantiene en la regresión: ningun predictor tiene efecto, pues la probabilidad de que el efecto sea cero, en cada caso, es muy alta (mayor a 0.1).
+Hasta aquí, vemos que lo que nos informaba el análisis bivariado se mantiene en la regresión: la PEA no tiene efecto, pero la zona sí (no estar en la costa lo tiene).
 
 Sin embargo, es aquí donde reflexionamos si los datos crudos que tenemos podrían necesitar alguna **transformación**:
 
 ```{r}
 # la pea como porcentaje
-EstPeaPob$peaOcu_pct=EstPeaPob$peaOcupada/EstPeaPob$TOTAL
+estadoLocales$peaOcu_pct=estadoLocales$peaOcupada/estadoLocales$TOTALpob
 
 
-modelo2=formula(buenEstado~peaOcu_pct + populoso)
-regre2=lm(modelo2,data = EstPeaPob)
+modelo2=formula(buenEstado~peaOcu_pct + zona)
+regre2=lm(modelo2,data = estadoLocales)
 summary(regre2)
 ```
 
-O en mejor version con ayuda de *stargazer*:
 
-```{r, warning=FALSE, message=FALSE, echo=TRUE,results='asis'}
-library(stargazer)
-
-stargazer(regre2,type = "html",intercept.bottom = FALSE)
-```
-
-<br></br>
-
-Aquí aparace algo muy interesante, **primero** que *peaOcu_pct* tiene efecto, pues es *significativo* (*p-valor* es menor que 0.05); **segundo**, que ese efecto es *directo*, pues el coeficiente calculado es positivo (signo de columna *Estimate*); y **tercero** que la *magnitud* de ese efecto es `r round(regre2$coefficients[2],3)`, lo que indica cuánto aumenta, en promedio, la variables dependiente, cuando la variable independiente se incremente en una unidad.
+Aquí aparace algo muy interesante, **primero** que *peaOcu_pct* tiene efecto, pues es *significativo* (*p-valor* es menor que 0.05); **segundo**, que ese efecto es *directo*, pues el coeficiente calculado es positivo (signo de columna *Estimate*); y **tercero** que la *magnitud* de ese efecto es `r round(regre2$coefficients[2],3)`, lo que indica cuánto aumenta, en promedio, la variables dependiente, cuando la variable independiente se incremente en una unidad. Ahora bien, la zona selva ya no difiere de la costa ne esta nueva regresión.
 
 Esto es información suficiente para representar esa relación con una ecuación:
 
